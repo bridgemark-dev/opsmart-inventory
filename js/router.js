@@ -16,7 +16,7 @@ const ROUTES = {
   '/suppliers':        () => import('./pages/suppliers.js'),
   '/purchase-orders':  () => import('./pages/purchase-orders.js'),
   '/reports':          () => import('./pages/reports.js'),
-  '/activity':         () => import('./pages/activity.js'),
+  '/activity':         () => import('./pages/activity.ts'),
   '/settings':         () => import('./pages/settings.js'),
   '/import':           () => import('./pages/import.js'),
 };

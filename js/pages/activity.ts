@@ -1,7 +1,37 @@
 /* PAGE: activity */
-import { requireAuth, getCurrentProfile, supabase, applySidebarRole } from '../supabase.js';
+import type { Database } from '../../src/types/supabase.ts';
+import type { Profile as AppProfile } from '../../src/types/index.ts';
+import { supabase } from '../supabase.js';
 
-let _profile = null;
+// ── Types ─────────────────────────────────────────────────────
+
+type LogCategory = 'inventory' | 'sale' | 'receive' | 'submission' | 'product';
+
+interface LogEntry {
+  id: string;
+  source: 'transaction' | 'submission' | 'audit';
+  category: LogCategory;
+  type: string;
+  timestamp: string;
+  product: string | null;
+  location: string;
+  user: string;
+  delta: number | null;
+  before: number | null;
+  after: number | null;
+  notes: string | null;
+  refType?: string | null;
+  date?: string;
+  status?: string;
+}
+
+type TxRow = Database['public']['Tables']['inventory_transactions']['Row'];
+type NsRow  = Database['public']['Tables']['nightly_submissions']['Row'];
+type AuditRow = Database['public']['Tables']['audit_log']['Row'];
+
+// ── Module state ──────────────────────────────────────────────
+
+let _profile: AppProfile | null = null;
 
 const _HTML = `<div class="page-header">
     <div>
@@ -167,44 +197,42 @@ const _HTML = `<div class="page-header">
   </div>
 </div>`;
 
-export async function init(profile) {
+export async function init(profile: AppProfile): Promise<void> {
   _profile = profile;
-  document.getElementById('outlet').innerHTML = _HTML;
-  
+  document.getElementById('outlet')!.innerHTML = _HTML;
+
   await _run(profile);
 }
 
 /* ── State ── */
-let allEntries     = [];      // full loaded set
-let filtered       = [];      // after search/category filter
-let activeCategory = 'all';
-let searchQuery    = '';
-let offset         = 0;
-const PAGE_SIZE    = 50;
-let hasMore        = false;
+let allEntries: LogEntry[]     = [];
+let filtered: LogEntry[]       = [];
+let activeCategory: string     = 'all';
+let searchQuery: string        = '';
+let offset: number             = 0;
+const PAGE_SIZE                = 50;
+let hasMore: boolean           = false;
 
 /* ── Init ── */
-async function _run(profile) {
+async function _run(profile: AppProfile): Promise<void> {
     const _subEl = document.getElementById('page-subtitle');
-    if (_subEl) _subEl.textContent = "PANDORA'S BOX · " + (_profile.locations.length === 1 ? _profile.locations[0].location_name.toUpperCase() : 'ALL LOCATIONS');
-    const _roleArr = _profile.locations.map(l => l.role);
-    const _role = _roleArr.includes('owner') ? 'owner' : _roleArr.includes('manager') ? 'manager' : _roleArr.includes('employee') ? 'employee' : 'employee';
+    if (_subEl) _subEl.textContent = "PANDORA'S BOX · " + (profile.locations.length === 1 ? profile.locations[0].location_name.toUpperCase() : 'ALL LOCATIONS');
 
     // Set default date range: last 30 days
     const today    = new Date().toISOString().slice(0,10);
     const thirtyAgo = new Date(Date.now() - 30*864e5).toISOString().slice(0,10);
-    document.getElementById('date-from').value = thirtyAgo;
-    document.getElementById('date-to').value   = today;
+    (document.getElementById('date-from') as HTMLInputElement).value = thirtyAgo;
+    (document.getElementById('date-to') as HTMLInputElement).value   = today;
 
     await Promise.all([populateDropdowns(), loadLogs(true), loadStats()]);
 }
 
 /* ── Populate filter dropdowns ── */
-async function populateDropdowns() {
+async function populateDropdowns(): Promise<void> {
     // Locations
     const { data: locs } = await supabase
       .from('locations').select('id,name').eq('is_active', true).order('name');
-    const locSel = document.getElementById('location-filter');
+    const locSel = document.getElementById('location-filter') as HTMLSelectElement;
     (locs ?? []).forEach(l => {
       const opt = document.createElement('option');
       opt.value = l.id; opt.textContent = l.name;
@@ -214,7 +242,7 @@ async function populateDropdowns() {
     // Users
     const { data: users } = await supabase
       .from('profiles').select('id,display_name,full_name').eq('is_active', true).order('full_name');
-    const userSel = document.getElementById('user-filter');
+    const userSel = document.getElementById('user-filter') as HTMLSelectElement;
     (users ?? []).forEach(u => {
       const opt = document.createElement('option');
       opt.value = u.id; opt.textContent = u.display_name || u.full_name;
@@ -223,16 +251,16 @@ async function populateDropdowns() {
 }
 
 /* ── Load logs ── */
-window.loadLogs = async function(reset=false) {
+window.loadLogs = async function(reset = false): Promise<void> {
     if (reset) { offset = 0; allEntries = []; }
 
-    document.getElementById('log-loading').style.display = reset ? '' : 'none';
-    if (reset) document.getElementById('log-feed').innerHTML = '';
+    (document.getElementById('log-loading') as HTMLElement).style.display = reset ? '' : 'none';
+    if (reset) (document.getElementById('log-feed') as HTMLElement).innerHTML = '';
 
-    const dateFrom = document.getElementById('date-from').value;
-    const dateTo   = document.getElementById('date-to').value;
-    const locId    = document.getElementById('location-filter').value;
-    const userId   = document.getElementById('user-filter').value;
+    const dateFrom = (document.getElementById('date-from') as HTMLInputElement).value;
+    const dateTo   = (document.getElementById('date-to') as HTMLInputElement).value;
+    const locId    = (document.getElementById('location-filter') as HTMLSelectElement).value;
+    const userId   = (document.getElementById('user-filter') as HTMLSelectElement).value;
 
     // ── Fetch inventory transactions ──────────────────────────
     let txQuery = supabase
@@ -282,9 +310,9 @@ window.loadLogs = async function(reset=false) {
     const [txRes, nsRes, auditRes] = await Promise.all([txQuery, nsQuery, auditQuery]);
 
     // Normalize inventory transactions
-    const txEntries = (txRes.data ?? []).map(tx => ({
+    const txEntries: LogEntry[] = (txRes.data ?? []).map((tx: any) => ({
       id:        tx.id,
-      source:    'transaction',
+      source:    'transaction' as const,
       category:  txCategory(tx.type),
       type:      tx.type,
       timestamp: tx.created_at,
@@ -299,10 +327,10 @@ window.loadLogs = async function(reset=false) {
     }));
 
     // Normalize nightly submissions
-    const nsEntries = (nsRes.data ?? []).map(ns => ({
+    const nsEntries: LogEntry[] = (nsRes.data ?? []).map((ns: any) => ({
       id:        ns.id,
-      source:    'submission',
-      category:  'submission',
+      source:    'submission' as const,
+      category:  'submission' as const,
       type:      'submission_' + ns.status,
       timestamp: ns.approved_at || ns.submitted_at || ns.submission_date,
       product:   null,
@@ -311,76 +339,67 @@ window.loadLogs = async function(reset=false) {
                    ? (ns.approved_by?.display_name || ns.approved_by?.full_name || '—')
                    : (ns.submitted_by?.display_name || ns.submitted_by?.full_name || '—'),
       delta:     null,
+      before:    null,
+      after:     null,
       notes:     ns.sales_total ? `$${parseFloat(ns.sales_total).toFixed(2)} sales total` : null,
       date:      ns.submission_date,
       status:    ns.status,
     }));
 
     // Normalize audit log entries
-    const auditEntries = (auditRes.data ?? []).map(a => {
-      const labelMap = {
-        product_created:    'Product added',
-        product_updated:    'Product updated',
-        product_deleted:    'Product removed',
-        product_deactivated:'Product deactivated',
-        product_reactivated:'Product reactivated',
-        supplier_created:   'Supplier added',
-        supplier_updated:   'Supplier updated',
-        supplier_deleted:   'Supplier removed',
-      };
-      return {
-        id:        a.id,
-        source:    'audit',
-        category:  'product',
-        type:      a.event_type,
-        timestamp: a.created_at,
-        product:   a.entity_name ?? '—',
-        location:  '—',
-        user:      'System',
-        delta:     null,
-        notes:     null,
-      };
-    });
+    const auditEntries: LogEntry[] = (auditRes.data ?? []).map((a: any) => ({
+      id:        a.id,
+      source:    'audit' as const,
+      category:  'product' as const,
+      type:      a.event_type,
+      timestamp: a.created_at,
+      product:   a.entity_name ?? '—',
+      location:  '—',
+      user:      'System',
+      delta:     null,
+      before:    null,
+      after:     null,
+      notes:     null,
+    }));
 
     // Merge and sort by timestamp
     const newEntries = [...txEntries, ...nsEntries, ...auditEntries]
-      .sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp))
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       .slice(0, PAGE_SIZE);
 
     allEntries = reset ? newEntries : [...allEntries, ...newEntries];
     hasMore = newEntries.length === PAGE_SIZE;
 
-    document.getElementById('log-loading').style.display = 'none';
-    document.getElementById('load-more-wrap').style.display = hasMore ? '' : 'none';
+    (document.getElementById('log-loading') as HTMLElement).style.display = 'none';
+    (document.getElementById('load-more-wrap') as HTMLElement).style.display = hasMore ? '' : 'none';
 
     updateCounts();
     applyFilter();
 };
 
-function txCategory(type) {
-    if (['adjustment','initial'].includes(type))          return 'inventory';
-    if (type === 'sale')                                  return 'sale';
+function txCategory(type: string): LogCategory {
+    if (['adjustment','initial'].includes(type))               return 'inventory';
+    if (type === 'sale')                                       return 'sale';
     if (['receive','transfer_in','transfer_out'].includes(type)) return 'receive';
     return 'inventory';
 }
 
 /* ── Category filter ── */
-window.setCategory = function(cat, el) {
+window.setCategory = function(cat: string, el: HTMLElement): void {
     activeCategory = cat;
     document.querySelectorAll('.category-pill').forEach(p => p.classList.remove('active'));
     el.classList.add('active');
     applyFilter();
 };
 
-window.handleSearch = function(val) {
+window.handleSearch = function(val: string): void {
     searchQuery = val.toLowerCase().trim();
-    // Sync both search inputs
-    document.getElementById('search-filter').value  = val;
-    document.getElementById('global-search').value  = val;
+    (document.getElementById('search-filter') as HTMLInputElement).value = val;
+    (document.getElementById('global-search') as HTMLInputElement).value = val;
     applyFilter();
 };
 
-function applyFilter() {
+function applyFilter(): void {
     filtered = allEntries.filter(e => {
       if (activeCategory !== 'all' && e.category !== activeCategory) return false;
       if (searchQuery) {
@@ -390,28 +409,28 @@ function applyFilter() {
       return true;
     });
 
-    document.getElementById('entry-count').textContent =
-      `${filtered.length.toLocaleString()} entr${filtered.length !== 1 ? 'ies' : 'y'}`;
+    const el = document.getElementById('entry-count') as HTMLElement;
+    el.textContent = `${filtered.length.toLocaleString()} entr${filtered.length !== 1 ? 'ies' : 'y'}`;
 
     renderFeed();
 }
 
 /* ── Update pill counts ── */
-function updateCounts() {
-    const counts = { all:0, inventory:0, sale:0, receive:0, submission:0, product:0 };
+function updateCounts(): void {
+    const counts: Record<string, number> = { all:0, inventory:0, sale:0, receive:0, submission:0, product:0 };
     allEntries.forEach(e => {
-      counts.all++;
+      counts['all']++;
       counts[e.category] = (counts[e.category] || 0) + 1;
     });
     Object.entries(counts).forEach(([cat, n]) => {
       const el = document.getElementById('count-' + cat);
-      if (el) el.textContent = n;
+      if (el) el.textContent = String(n);
     });
 }
 
 /* ── Render feed ── */
-function renderFeed() {
-    const feed = document.getElementById('log-feed');
+function renderFeed(): void {
+    const feed = document.getElementById('log-feed') as HTMLElement;
 
     if (!filtered.length) {
       feed.innerHTML = `
@@ -423,7 +442,7 @@ function renderFeed() {
     }
 
     // Group by date
-    const groups = {};
+    const groups: Record<string, LogEntry[]> = {};
     filtered.forEach(e => {
       const date = new Date(e.timestamp).toLocaleDateString('en-US', {
         weekday:'long', year:'numeric', month:'long', day:'numeric'
@@ -443,7 +462,7 @@ function renderFeed() {
       </div>`).join('');
 }
 
-function renderEntry(e) {
+function renderEntry(e: LogEntry): string {
     const { icon, iconClass } = entryIcon(e);
     const delta = e.delta !== null
       ? `<span class="log-delta ${e.delta > 0 ? 'positive' : e.delta < 0 ? 'negative' : 'neutral'}">
@@ -473,64 +492,54 @@ function renderEntry(e) {
       </div>`;
 }
 
-function entryIcon(e) {
-    const map = {
-      adjustment:          { icon: '⊿', iconClass: 'inventory' },
-      initial:             { icon: '●', iconClass: 'inventory' },
-      sale:                { icon: '↑', iconClass: 'sale'      },
-      receive:             { icon: '↓', iconClass: 'receive'   },
-      transfer_in:         { icon: '→', iconClass: 'receive'   },
-      transfer_out:        { icon: '←', iconClass: 'danger'    },
-      submission_submitted:   { icon: '📋', iconClass: 'submission'},
-      submission_approved:    { icon: '✓',  iconClass: 'receive'   },
-      submission_rejected:    { icon: '✕',  iconClass: 'danger'    },
-      product_created:        { icon: '+',  iconClass: 'product'   },
-      product_updated:        { icon: '✎',  iconClass: 'product'   },
-      product_deleted:        { icon: '✕',  iconClass: 'danger'    },
-      product_deactivated:    { icon: '○',  iconClass: 'system'    },
-      product_reactivated:    { icon: '●',  iconClass: 'product'   },
-      supplier_created:       { icon: '+',  iconClass: 'product'   },
-      supplier_updated:       { icon: '✎',  iconClass: 'product'   },
-      supplier_deleted:       { icon: '✕',  iconClass: 'danger'    },
+function entryIcon(e: LogEntry): { icon: string; iconClass: string } {
+    const map: Record<string, { icon: string; iconClass: string }> = {
+      adjustment:           { icon: '⊿', iconClass: 'inventory' },
+      initial:              { icon: '●', iconClass: 'inventory' },
+      sale:                 { icon: '↑', iconClass: 'sale'      },
+      receive:              { icon: '↓', iconClass: 'receive'   },
+      transfer_in:          { icon: '→', iconClass: 'receive'   },
+      transfer_out:         { icon: '←', iconClass: 'danger'    },
+      submission_submitted: { icon: '📋', iconClass: 'submission'},
+      submission_approved:  { icon: '✓',  iconClass: 'receive'  },
+      submission_rejected:  { icon: '✕',  iconClass: 'danger'   },
+      product_created:      { icon: '+',  iconClass: 'product'  },
+      product_updated:      { icon: '✎',  iconClass: 'product'  },
+      product_deleted:      { icon: '✕',  iconClass: 'danger'   },
+      product_deactivated:  { icon: '○',  iconClass: 'system'   },
+      product_reactivated:  { icon: '●',  iconClass: 'product'  },
+      supplier_created:     { icon: '+',  iconClass: 'product'  },
+      supplier_updated:     { icon: '✎',  iconClass: 'product'  },
+      supplier_deleted:     { icon: '✕',  iconClass: 'danger'   },
     };
     return map[e.type] ?? { icon: '●', iconClass: 'system' };
 }
 
-function entryTitle(e) {
+function entryTitle(e: LogEntry): string {
     switch(e.type) {
-      case 'adjustment':
-        return `Stock adjusted — <strong>${e.product || '—'}</strong>`;
-      case 'initial':
-        return `Opening stock set — <strong>${e.product || '—'}</strong>`;
-      case 'sale':
-        return `Sale deducted — <strong>${e.product || '—'}</strong>`;
-      case 'receive':
-        return `Stock received — <strong>${e.product || '—'}</strong>`;
-      case 'transfer_in':
-        return `Transfer received — <strong>${e.product || '—'}</strong>`;
-      case 'transfer_out':
-        return `Transfer sent — <strong>${e.product || '—'}</strong>`;
-      case 'submission_submitted':
-        return `Nightly totals submitted for <strong>${e.date}</strong>`;
-      case 'submission_approved':
-        return `Nightly totals approved for <strong>${e.date}</strong>`;
-      case 'submission_rejected':
-        return `Nightly totals returned for <strong>${e.date}</strong>`;
-      case 'product_created':     return `Product added — <strong>${e.product}</strong>`;
-      case 'product_updated':     return `Product updated — <strong>${e.product}</strong>`;
-      case 'product_deleted':     return `Product removed — <strong>${e.product}</strong>`;
-      case 'product_deactivated': return `Product deactivated — <strong>${e.product}</strong>`;
-      case 'product_reactivated': return `Product reactivated — <strong>${e.product}</strong>`;
-      case 'supplier_created':    return `Supplier added — <strong>${e.product}</strong>`;
-      case 'supplier_updated':    return `Supplier updated — <strong>${e.product}</strong>`;
-      case 'supplier_deleted':    return `Supplier removed — <strong>${e.product}</strong>`;
-      default:
-        return e.type;
+      case 'adjustment':          return `Stock adjusted — <strong>${e.product || '—'}</strong>`;
+      case 'initial':             return `Opening stock set — <strong>${e.product || '—'}</strong>`;
+      case 'sale':                return `Sale deducted — <strong>${e.product || '—'}</strong>`;
+      case 'receive':             return `Stock received — <strong>${e.product || '—'}</strong>`;
+      case 'transfer_in':         return `Transfer received — <strong>${e.product || '—'}</strong>`;
+      case 'transfer_out':        return `Transfer sent — <strong>${e.product || '—'}</strong>`;
+      case 'submission_submitted': return `Nightly totals submitted for <strong>${e.date}</strong>`;
+      case 'submission_approved':  return `Nightly totals approved for <strong>${e.date}</strong>`;
+      case 'submission_rejected':  return `Nightly totals returned for <strong>${e.date}</strong>`;
+      case 'product_created':      return `Product added — <strong>${e.product}</strong>`;
+      case 'product_updated':      return `Product updated — <strong>${e.product}</strong>`;
+      case 'product_deleted':      return `Product removed — <strong>${e.product}</strong>`;
+      case 'product_deactivated':  return `Product deactivated — <strong>${e.product}</strong>`;
+      case 'product_reactivated':  return `Product reactivated — <strong>${e.product}</strong>`;
+      case 'supplier_created':     return `Supplier added — <strong>${e.product}</strong>`;
+      case 'supplier_updated':     return `Supplier updated — <strong>${e.product}</strong>`;
+      case 'supplier_deleted':     return `Supplier removed — <strong>${e.product}</strong>`;
+      default:                     return e.type;
     }
 }
 
-function entryDetail(e) {
-    const parts = [];
+function entryDetail(e: LogEntry): string {
+    const parts: string[] = [];
     if (e.before !== null && e.after !== null) {
       parts.push(`${e.before} → ${e.after} units`);
     }
@@ -538,8 +547,8 @@ function entryDetail(e) {
     return parts.join(' · ');
 }
 
-function entryTagLabel(e) {
-    const map = {
+function entryTagLabel(e: LogEntry): string {
+    const map: Record<LogCategory, string> = {
       inventory:  'Inventory',
       sale:       'Sale',
       receive:    'Receiving',
@@ -550,16 +559,16 @@ function entryTagLabel(e) {
 }
 
 /* ── Load more ── */
-window.loadMore = async function() {
+window.loadMore = async function(): Promise<void> {
     offset += PAGE_SIZE;
-    const btn = document.getElementById('load-more-btn');
+    const btn = document.getElementById('load-more-btn') as HTMLButtonElement;
     btn.disabled = true; btn.textContent = 'Loading…';
-    await loadLogs(false);
+    await (window.loadLogs as (reset: boolean) => Promise<void>)(false);
     btn.disabled = false; btn.textContent = 'Load More';
 };
 
 /* ── Stats panel ── */
-async function loadStats() {
+async function loadStats(): Promise<void> {
     const thirtyAgo = new Date(Date.now() - 30*864e5).toISOString();
 
     const [adjRes, saleRes, recRes, subRes] = await Promise.all([
@@ -576,16 +585,16 @@ async function loadStats() {
     const adjRows = adjRes.data  ?? [];
     const recRows = recRes.data  ?? [];
 
-    const unitsAdded   = recRows.reduce((s,r)  => s + Math.max(0, r.quantity_delta||0), 0)
-                       + adjRows.filter(r => r.quantity_delta > 0).reduce((s,r) => s + r.quantity_delta, 0);
-    const unitsRemoved = Math.abs(adjRows.filter(r => r.quantity_delta < 0).reduce((s,r) => s + r.quantity_delta, 0));
+    const unitsAdded   = recRows.reduce((s, r) => s + Math.max(0, r.quantity_delta ?? 0), 0)
+                       + adjRows.filter(r => (r.quantity_delta ?? 0) > 0).reduce((s, r) => s + (r.quantity_delta ?? 0), 0);
+    const unitsRemoved = Math.abs(adjRows.filter(r => (r.quantity_delta ?? 0) < 0).reduce((s, r) => s + (r.quantity_delta ?? 0), 0));
 
-    document.getElementById('stat-adjustments').textContent = adjRows.length;
-    document.getElementById('stat-sales').textContent       = saleRes.count ?? 0;
-    document.getElementById('stat-received').textContent    = recRows.reduce((s,r) => s + (r.quantity_delta||0), 0);
-    document.getElementById('stat-submissions').textContent = subRes.count ?? 0;
-    document.getElementById('stat-removed').textContent     = unitsRemoved.toLocaleString();
-    document.getElementById('stat-added').textContent       = unitsAdded.toLocaleString();
+    (document.getElementById('stat-adjustments') as HTMLElement).textContent = String(adjRows.length);
+    (document.getElementById('stat-sales') as HTMLElement).textContent       = String(saleRes.count ?? 0);
+    (document.getElementById('stat-received') as HTMLElement).textContent    = String(recRows.reduce((s, r) => s + (r.quantity_delta ?? 0), 0));
+    (document.getElementById('stat-submissions') as HTMLElement).textContent = String(subRes.count ?? 0);
+    (document.getElementById('stat-removed') as HTMLElement).textContent     = unitsRemoved.toLocaleString();
+    (document.getElementById('stat-added') as HTMLElement).textContent       = unitsAdded.toLocaleString();
 
     // Top users
     const { data: txUsers } = await supabase
@@ -594,20 +603,20 @@ async function loadStats() {
       .gte('created_at', thirtyAgo)
       .not('performed_by', 'is', null);
 
-    const userCounts = {};
-    (txUsers ?? []).forEach(tx => {
-      const id   = tx.performed_by;
+    const userCounts: Record<string, { name: string; count: number }> = {};
+    (txUsers ?? []).forEach((tx: any) => {
+      const id   = tx.performed_by as string;
       const name = tx.profiles?.display_name || tx.profiles?.full_name || 'Unknown';
       userCounts[id] = userCounts[id] || { name, count: 0 };
       userCounts[id].count++;
     });
 
-    const topUsers = Object.values(userCounts).sort((a,b) => b.count - a.count).slice(0,5);
+    const topUsers = Object.values(userCounts).sort((a, b) => b.count - a.count).slice(0, 5);
 
-    document.getElementById('top-users-list').innerHTML = topUsers.length
+    (document.getElementById('top-users-list') as HTMLElement).innerHTML = topUsers.length
       ? topUsers.map(u => `
           <div class="top-user-row">
-            <div class="top-user-avatar">${u.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)}</div>
+            <div class="top-user-avatar">${u.name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0,2)}</div>
             <div class="top-user-name">${u.name}</div>
             <div class="top-user-count">${u.count} actions</div>
           </div>`)
@@ -616,8 +625,8 @@ async function loadStats() {
 }
 
 /* ── Export CSV ── */
-window.exportLogs = function() {
-    if (!filtered.length) { showToast('No entries to export.'); return; }
+window.exportLogs = function(): void {
+    if (!filtered.length) { (window as any).showToast('No entries to export.'); return; }
 
     const headers = ['Timestamp','Category','Type','Product','Location','User','Delta','Before','After','Notes'];
     const rows = filtered.map(e => [
@@ -636,6 +645,5 @@ window.exportLogs = function() {
     a.href     = URL.createObjectURL(blob);
     a.download = `pandoras-activity-${new Date().toISOString().slice(0,10)}.csv`;
     a.click();
-    showToast(`Exported ${filtered.length} entries.`);
+    (window as any).showToast(`Exported ${filtered.length} entries.`);
 };
-

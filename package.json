@@ -21,6 +21,7 @@
     "globals": "^17.4.0",
     "prettier": "^3.8.1",
     "supabase": "^2.84.0",
+    "typescript": "^6.0.2",
     "vite": "^5.0.0"
   }
 }
