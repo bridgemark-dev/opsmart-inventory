@@ -12,13 +12,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Once Vite is added (tomorrow), replace with: npm ci && npm run build
-      - name: Check for syntax errors in JS files
-        run: |
-          node --check js/router.js
-          node --check js/supabase.js
-          node --check config.js
-          for f in js/pages/*.js; do node --check "$f"; done
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON: ${{ secrets.VITE_SUPABASE_ANON }}
 
       - name: Validate migration SQL files exist
         run: |
