@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Once Vite is added (tomorrow), replace with: npm ci && npm run build
+      - name: Check for syntax errors in JS files
+        run: |
+          node --check js/router.js
+          node --check js/supabase.js
+          node --check config.js
+          for f in js/pages/*.js; do node --check "$f"; done
+
+      - name: Validate migration SQL files exist
+        run: |
+          ls supabase/migration-*.sql
+          echo 'Migration files present: OK'
+
+      - name: Check no credentials in source
+        run: |
+          if grep -r 'sb_publishable_' --include='*.js' --include='*.ts' .; then
+            echo 'FAIL: Supabase key found in source code'
+            exit 1
+          fi
+          echo 'Credential check: OK'

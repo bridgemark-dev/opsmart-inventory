@@ -1,0 +1,4 @@
+# SPA routing — all paths serve index.html
+# Exceptions: login page and static assets pass through
+/login     /login.html  200
+/*         /index.html  200

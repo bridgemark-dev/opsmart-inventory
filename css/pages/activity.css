@@ -1,0 +1,345 @@
+/* ============================================================
+   ACTIVITY LOGS PAGE
+   css/pages/activity.css
+   ============================================================ */
+
+/* ── Category filter pills ── */
+.category-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.category-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.68rem;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text-muted);
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.category-pill:hover { border-color: var(--border-light); color: var(--text); }
+
+.category-pill.active {
+  font-weight: 600;
+}
+
+.category-pill .pill-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.category-pill .pill-count {
+  background: rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 0 5px;
+  font-size: 0.62rem;
+}
+
+/* Category colors */
+.pill-inventory.active  { background: rgba(201,168,76,0.12);  border-color: var(--gold);    color: var(--gold);    }
+.pill-sales.active      { background: rgba(76,143,201,0.12);  border-color: var(--blue);    color: var(--blue);    }
+.pill-receiving.active  { background: rgba(76,201,122,0.12);  border-color: var(--sage);    color: var(--sage);    }
+.pill-submissions.active{ background: rgba(76,143,201,0.12);  border-color: var(--blue);    color: var(--blue);    }
+.pill-products.active   { background: rgba(201,168,76,0.12);  border-color: var(--gold);    color: var(--gold);    }
+.pill-all.active        { background: var(--surface3);         border-color: var(--border-light); color: var(--text); }
+
+/* ── Log layout ── */
+.log-grid {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 20px;
+  align-items: start;
+}
+
+/* ── Log entries ── */
+.log-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.log-date-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-family: 'DM Mono', monospace;
+}
+
+.log-date-header:first-child { border-top: none; }
+
+.log-date-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.log-entry {
+  display: flex;
+  gap: 14px;
+  padding: 13px 20px;
+  border-bottom: 1px solid var(--border);
+  transition: background var(--transition);
+  cursor: default;
+}
+
+.log-entry:last-child { border-bottom: none; }
+.log-entry:hover      { background: var(--surface2); }
+
+/* Type icon badge */
+.log-icon {
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.log-icon.inventory   { background: rgba(201,168,76,0.15);  color: var(--gold);    }
+.log-icon.sale        { background: rgba(76,143,201,0.12);  color: var(--blue);    }
+.log-icon.receive     { background: rgba(76,201,122,0.12);  color: var(--sage);    }
+.log-icon.submission  { background: rgba(76,143,201,0.12);  color: var(--blue);    }
+.log-icon.product     { background: rgba(201,168,76,0.12);  color: var(--gold);    }
+.log-icon.system      { background: var(--surface3);         color: var(--text-muted); }
+.log-icon.danger      { background: rgba(201,76,76,0.12);   color: var(--crimson); }
+
+.log-body { flex: 1; min-width: 0; }
+
+.log-title {
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1.4;
+  margin-bottom: 2px;
+}
+
+.log-title strong { color: var(--text); }
+
+.log-detail {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  font-family: 'DM Mono', monospace;
+  margin-bottom: 4px;
+}
+
+.log-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.log-time {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-family: 'DM Mono', monospace;
+}
+
+.log-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-family: 'DM Mono', monospace;
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+.log-tag.inventory   { background: rgba(201,168,76,0.12);  color: var(--gold);    }
+.log-tag.sale        { background: rgba(76,143,201,0.12);  color: var(--blue);    }
+.log-tag.receive     { background: rgba(76,201,122,0.12);  color: var(--sage);    }
+.log-tag.submission  { background: rgba(76,143,201,0.12);  color: var(--blue);    }
+.log-tag.product     { background: rgba(201,168,76,0.12);  color: var(--gold);    }
+.log-tag.danger      { background: rgba(201,76,76,0.12);   color: var(--crimson); }
+
+.log-delta {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-left: auto;
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 1px;
+}
+
+.log-delta.positive { color: var(--sage); }
+.log-delta.negative { color: var(--crimson); }
+.log-delta.neutral  { color: var(--text-muted); }
+
+/* ── Empty / loading ── */
+.log-empty {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.log-empty-icon { font-size: 28px; opacity: 0.3; margin-bottom: 10px; }
+.log-empty-text { font-size: 0.8rem; color: var(--text-muted); font-family: 'DM Mono', monospace; }
+
+/* ── Right panel: summary stats ── */
+.stats-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  position: sticky;
+  top: calc(var(--header-h) + 20px);
+}
+
+.stats-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 18px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.8rem;
+}
+
+.stats-row:last-child { border-bottom: none; }
+
+.stats-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-dim);
+}
+
+.stats-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.stats-value {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+/* Top users section */
+.top-users {
+  padding: 14px 18px;
+  border-top: 1px solid var(--border);
+}
+
+.top-users-title {
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-family: 'DM Mono', monospace;
+  margin-bottom: 10px;
+}
+
+.top-user-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.78rem;
+}
+
+.top-user-row:last-child { border-bottom: none; }
+
+.top-user-avatar {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, var(--gold), #6b3e0e);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--bg);
+  font-family: 'Cormorant Garamond', serif;
+  flex-shrink: 0;
+}
+
+.top-user-name  { flex: 1; font-weight: 500; }
+.top-user-count { font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--text-muted); }
+
+/* ── Date range controls ── */
+.date-range-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.date-input {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0 10px;
+  height: 36px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.78rem;
+  outline: none;
+  transition: border-color var(--transition);
+  width: 130px;
+  -webkit-appearance: none;
+  appearance: none;
+  color-scheme: dark;
+}
+
+.date-input:focus { border-color: var(--gold); }
+
+.date-sep {
+  color: var(--text-muted);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.75rem;
+}
+
+/* ── Load more ── */
+.load-more-wrap {
+  padding: 16px;
+  text-align: center;
+  border-top: 1px solid var(--border);
+}
+
+.load-more-btn {
+  padding: 8px 24px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-dim);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: var(--transition);
+  letter-spacing: 0.06em;
+}
+
+.load-more-btn:hover   { border-color: var(--gold); color: var(--gold); }
+.load-more-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Responsive ── */
+@media (max-width: 1000px) {
+  .log-grid { grid-template-columns: 1fr; }
+  .stats-card { position: static; }
+}
+
+@media (max-width: 600px) {
+  .category-pills { gap: 4px; }
+  .category-pill  { font-size: 0.62rem; padding: 4px 9px; }
+  .date-range-wrap { flex-wrap: wrap; }
+  .date-input { width: 100%; }
+}

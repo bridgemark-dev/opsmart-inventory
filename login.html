@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpSmart Inventory — Sign In</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/variables.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .login-wrap {
+      width: 100%;
+      max-width: 400px;
+      padding: 24px;
+    }
+    .login-brand {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .login-brand .name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2rem;
+      font-weight: 300;
+      color: var(--gold);
+      letter-spacing: 0.04em;
+    }
+    .login-brand .sub {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+    }
+    .login-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.4rem;
+      font-weight: 400;
+      margin-bottom: 24px;
+      color: var(--text);
+    }
+    .form-group { margin-bottom: 16px; }
+    .form-label {
+      display: block;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-family: 'DM Mono', monospace;
+      margin-bottom: 6px;
+    }
+    .form-input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .form-input:focus { border-color: var(--gold); }
+    .login-btn {
+      width: 100%;
+      background: var(--gold);
+      color: var(--bg);
+      border: none;
+      border-radius: var(--radius);
+      padding: 12px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.15s;
+    }
+    .login-btn:hover { background: #d4b05a; }
+    .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .login-error {
+      color: var(--crimson);
+      font-size: 0.78rem;
+      font-family: 'DM Mono', monospace;
+      margin-top: 12px;
+      display: none;
+    }
+    .login-footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-family: 'DM Mono', monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="login-brand">
+      <div class="name" id="login-client">Pandora's Box</div>
+      <div class="sub" id="login-product">OpSmart Inventory</div>
+    </div>
+    <div class="login-card">
+      <div class="login-title">Sign in to your account</div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" type="email" id="email" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="login-btn" id="login-btn">Sign In</button>
+      <div class="login-error" id="login-error"></div>
+    </div>
+    <div class="login-footer" id="login-footer">Bridgemark Digital · OpSmart Inventory</div>
+  </div>
+
+  <script type="module">
+    import { supabase, getCurrentUser } from './js/supabase.js';
+    import { CONFIG } from './config.js';
+
+    // Apply branding
+    document.getElementById('login-client').textContent  = CONFIG.CLIENT_NAME;
+    document.getElementById('login-product').textContent = CONFIG.PRODUCT_NAME;
+    document.getElementById('login-footer').textContent  =
+      `${CONFIG.COMPANY_NAME} · ${CONFIG.PRODUCT_NAME}`;
+
+    // Redirect if already logged in
+    const user = await getCurrentUser();
+    if (user) { window.location.href = '/'; }
+
+    const btn      = document.getElementById('login-btn');
+    const errorEl  = document.getElementById('login-error');
+    const emailEl  = document.getElementById('email');
+    const passEl   = document.getElementById('password');
+
+    async function doLogin() {
+      const email    = emailEl.value.trim();
+      const password = passEl.value;
+      if (!email || !password) { showError('Please enter your email and password.'); return; }
+
+      btn.disabled = true;
+      btn.textContent = 'Signing in…';
+      errorEl.style.display = 'none';
+
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        showError('Incorrect email or password.');
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+        return;
+      }
+
+      window.location.href = '/';
+    }
+
+    function showError(msg) {
+      errorEl.textContent    = msg;
+      errorEl.style.display  = 'block';
+    }
+
+    btn.addEventListener('click', doLogin);
+    passEl.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+    emailEl.addEventListener('keydown', e => { if (e.key === 'Enter') passEl.focus(); });
+  </script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+/* ============================================================
+   PANDORA'S BOX INVENTORY OS — Design Tokens
+   Edit this file to retheme the entire application.
+   ============================================================ */
+
+:root {
+  /* Backgrounds */
+  --bg:       #0a0a0c;
+  --surface:  #111116;
+  --surface2: #18181f;
+  --surface3: #1e1e28;
+
+  /* Borders */
+  --border:       rgba(255,255,255,0.06);
+  --border-light: rgba(255,255,255,0.10);
+
+  /* Brand / Accent Colors */
+  --gold:        #c9a84c;
+  --gold-dim:    rgba(201,168,76,0.15);
+  --gold-glow:   rgba(201,168,76,0.35);
+
+  --crimson:     #c94c4c;
+  --crimson-dim: rgba(201,76,76,0.12);
+
+  --sage:        #4cc97a;
+  --sage-dim:    rgba(76,201,122,0.12);
+
+  --blue:        #4c8fc9;
+  --blue-dim:    rgba(76,143,201,0.12);
+
+  /* Typography */
+  --text:       #f0ede8;
+  --text-dim:   rgba(240,237,232,0.55);
+  --text-muted: rgba(240,237,232,0.28);
+
+  /* Layout */
+  --sidebar-w:         220px;
+  --sidebar-collapsed: 64px;
+  --header-h:          60px;
+
+  /* Shape */
+  --radius:    10px;
+  --radius-lg: 16px;
+
+  /* Motion */
+  --transition: 0.22s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ── RESET ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html { font-size: 14px; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-weight: 400;
+  line-height: 1.5;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar        { width: 4px; height: 4px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: var(--border-light); border-radius: 4px; }
