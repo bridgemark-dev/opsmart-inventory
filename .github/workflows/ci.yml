@@ -28,7 +28,7 @@ jobs:
 
       - name: Check no credentials in source
         run: |
-          if grep -r 'sb_publishable_' --include='*.js' --include='*.ts' .; then
+          if grep -r 'sb_publishable_' --include='*.js' --include='*.ts' --exclude-dir=dist --exclude-dir=node_modules .; then
             echo 'FAIL: Supabase key found in source code'
             exit 1
           fi
