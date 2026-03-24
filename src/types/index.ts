@@ -22,6 +22,8 @@ export interface Profile {
   locations: UserLocation[];
 }
 
+export type AppProfile = Profile;
+
 export type UserRole = 'owner' | 'manager' | 'employee';
 
 // ── Navigation ───────────────────────────────────────────────

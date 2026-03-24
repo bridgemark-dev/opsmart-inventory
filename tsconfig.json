@@ -8,7 +8,10 @@
     "strict": false,
     "noEmit": true,
     "isolatedModules": true,
-    "allowImportingTsExtensions": true
+    "allowImportingTsExtensions": true,
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": { "@/*": ["src/*"] }
   },
-  "include": ["js/**/*", "src/**/*", "config.js"]
+  "include": ["js/**/*", "src/**/*", "config.js", "vite.config.ts"]
 }
