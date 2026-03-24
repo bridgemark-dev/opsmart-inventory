@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { AppLayout } from '@/layouts/AppLayout';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { ToastProvider } from '@/components/ui/Toast';
 import LoginPage from '@/pages/LoginPage';
 
 const DashboardPage      = lazy(() => import('@/pages/DashboardPage'));
@@ -34,6 +35,7 @@ function withSuspense(Component: React.ComponentType) {
 export function App() {
   return (
     <AuthProvider>
+    <ToastProvider>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/app" element={<AppLayout />}>
@@ -51,6 +53,7 @@ export function App() {
         </Route>
         <Route path="*" element={<Navigate to="/app/dashboard" replace />} />
       </Routes>
+    </ToastProvider>
     </AuthProvider>
   );
 }
