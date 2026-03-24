@@ -715,7 +715,7 @@ export async function init(profile) {
         const catId   = categories[catNum];
         const supId   = row.supplier ? (suppliers[row.supplier.toLowerCase().trim()] ?? null) : null;
         let attrs = {};
-        try { if (row.attributes?.trim()) attrs = JSON.parse(row.attributes); } catch {}
+        try { if (row.attributes?.trim()) attrs = JSON.parse(row.attributes); } catch { /* invalid JSON — leave attrs as empty object */ }
         return {
           category_id:    catId,
           product_number: prodNum,

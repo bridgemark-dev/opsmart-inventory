@@ -2,16 +2,24 @@
   "name": "opsmart-inventory",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "types:sync": "npx supabase gen types typescript --project-id nghhztoyaanzjacynvpu > src/types/supabase.ts"
+    "types:sync": "npx supabase gen types typescript --project-id nghhztoyaanzjacynvpu > src/types/supabase.ts",
+    "lint": "eslint js/**/*.js config.js --max-warnings 200",
+    "format": "prettier --write js/**/*.js css/**/*.css"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.0.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.1.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.4.0",
+    "prettier": "^3.8.1",
     "supabase": "^2.84.0",
     "vite": "^5.0.0"
   }
