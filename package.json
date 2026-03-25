@@ -8,8 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "types:sync": "npx supabase gen types typescript --project-id nghhztoyaanzjacynvpu > src/types/supabase.ts",
-    "lint": "eslint js/**/*.js config.js --max-warnings 200",
-    "format": "prettier --write js/**/*.js css/**/*.css"
+    "lint": "eslint config.js --max-warnings 200",
+    "format": "prettier --write src/**/*.{ts,tsx} css/**/*.css"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
